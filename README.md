@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/digitalby/llm-typer/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalby/llm-typer/actions/workflows/ci.yml)
 
+**Live:** https://llm-typer.vercel.app
+
 A two-column web app that streams any text to screen ChatGPT-style — letter by letter or word by word — with configurable speed, jitter, and colors.
 
 ## Features
