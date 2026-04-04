@@ -23,8 +23,8 @@ function tokenize(text: string, mode: TypingMode): string[] {
   if (mode === 'letter') {
     return text.split('')
   }
-  // Word mode: split on whitespace boundaries but keep the separators attached to
-  // the preceding word so the output stream assembles correctly.
+  // Keep trailing whitespace attached to each word so assembled output matches
+  // the source exactly.
   const words: string[] = []
   const re = /\S+\s*/g
   let match: RegExpExecArray | null
@@ -42,57 +42,43 @@ export function useTyper({
   const [displayed, setDisplayed] = useState<string>('')
   const [status, setStatus] = useState<TypingStatus>('idle')
 
-  // Stable refs so the recursive setTimeout closure never captures stale values.
-  const tokensRef = useRef<string[]>([])
-  const indexRef = useRef<number>(0)
+  // Only the timer handle needs a ref; everything else is captured at start() time.
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const speedRef = useRef<number>(speed)
-  const jitterRef = useRef<number>(jitter)
-  const modeRef = useRef<TypingMode>(mode)
-
-  // Keep refs in sync with latest props so a running animation picks up changes.
-  speedRef.current = speed
-  jitterRef.current = jitter
-  modeRef.current = mode
-
-  const scheduleNext = useCallback(() => {
-    const tokens = tokensRef.current
-    const idx = indexRef.current
-
-    if (idx >= tokens.length) {
-      setStatus('done')
-      return
-    }
-
-    const base = speedRef.current
-    const j = jitterRef.current
-    // Random offset in [-j*base, +j*base]
-    const offset = (Math.random() * 2 - 1) * j * base
-    const delay = Math.max(1, Math.round(base + offset))
-
-    timerRef.current = setTimeout(() => {
-      indexRef.current += 1
-      setDisplayed(tokens.slice(0, indexRef.current).join(''))
-      scheduleNext()
-    }, delay)
-  }, [])
 
   const start = useCallback(
     (text: string) => {
-      // Clear any running animation first.
       if (timerRef.current !== null) {
         clearTimeout(timerRef.current)
         timerRef.current = null
       }
 
-      const tokens = tokenize(text, modeRef.current)
-      tokensRef.current = tokens
-      indexRef.current = 0
+      // Capture current settings into the closure so that mid-animation
+      // prop changes don't interfere with a running sequence.
+      const tokens = tokenize(text, mode)
+      const capturedSpeed = speed
+      const capturedJitter = jitter
+      let index = 0
+
       setDisplayed('')
       setStatus('typing')
+
+      function scheduleNext() {
+        if (index >= tokens.length) {
+          setStatus('done')
+          return
+        }
+        const offset = (Math.random() * 2 - 1) * capturedJitter * capturedSpeed
+        const delay = Math.max(1, Math.round(capturedSpeed + offset))
+        timerRef.current = setTimeout(() => {
+          index += 1
+          setDisplayed(tokens.slice(0, index).join(''))
+          scheduleNext()
+        }, delay)
+      }
+
       scheduleNext()
     },
-    [scheduleNext],
+    [speed, jitter, mode],
   )
 
   const stop = useCallback(() => {
@@ -108,8 +94,6 @@ export function useTyper({
       clearTimeout(timerRef.current)
       timerRef.current = null
     }
-    tokensRef.current = []
-    indexRef.current = 0
     setDisplayed('')
     setStatus('idle')
   }, [])
