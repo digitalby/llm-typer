@@ -36,7 +36,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9",
     "eslint-config-next": "^16.2.6",
-    "eslint-plugin-jsx-nbsp": "github:digitalby-me/jsx-nbsp-lint#v1",
+    "eslint-plugin-jsx-nbsp": "https://github.com/digitalby-me/jsx-nbsp-lint/archive/refs/tags/v1.0.0.tar.gz",
     "jsdom": "^29.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
